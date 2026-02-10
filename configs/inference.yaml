@@ -1,0 +1,14 @@
+defaults:
+  - _self_
+  - data: nuscenes.yaml
+  - module: gaussiancar.yaml
+  - task: vehicle.yaml
+
+task_name: "inference"
+debug_mode: True
+checkpoint_path: "/workspace/checkpoints/${data.model_config.dataset_name}_${task.key}.ckpt"
+device: "cuda:0"
+seed: 42
+
+trainer:
+  batch_size: 1

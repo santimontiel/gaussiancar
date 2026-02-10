@@ -1,0 +1,124 @@
+key: map
+min_visibility: 0
+
+data:
+  vehicle: False
+  map_layers: ['lane', 'road_segment','road_divider', 'lane_divider','ped_crossing','walkway','carpark_area']
+
+module:
+  model:
+    head:
+      _target_: gaussiancar.modeling.components.SegHead
+      dim_last: 256
+      multi_head: True
+      outputs:
+        lane: [0, 1, 'identity']
+        road_segment: [1, 2, 'identity']
+        road_divider: [2, 3, 'identity']
+        lane_divider: [3, 4, 'identity']
+        ped_crossing: [4, 5, 'identity']
+        walkway: [5, 6, 'identity']
+        carpark_area: [6, 7, 'identity']
+
+    aux_head:
+      _target_: gaussiancar.modeling.components.SegHead
+      dim_last: 128
+      multi_head: True
+      outputs:
+        lane: [0, 1, 'identity']
+        road_segment: [1, 2, 'identity']
+        road_divider: [2, 3, 'identity']
+        lane_divider: [3, 4, 'identity']
+        ped_crossing: [4, 5, 'identity']
+        walkway: [5, 6, 'identity']
+        carpark_area: [6, 7, 'identity']
+
+
+losses:
+  _target_: gaussiancar.losses.MultipleLoss
+  modules_or_weights:
+    lane_weight: 1.0
+    lane:
+      _target_: gaussiancar.losses.BinarySegmentationLoss
+
+      min_visibility: ${task.min_visibility}
+      key: lane
+
+    road_segment_weight: 1.0
+    road_segment:
+      _target_: gaussiancar.losses.BinarySegmentationLoss
+
+      min_visibility: ${task.min_visibility}
+      key: road_segment
+
+    road_divider_weight: 1.0
+    road_divider:
+      _target_: gaussiancar.losses.BinarySegmentationLoss
+
+      min_visibility: ${task.min_visibility}
+      key: road_divider
+
+    lane_divider_weight: 1.0
+    lane_divider:
+      _target_: gaussiancar.losses.BinarySegmentationLoss
+
+      min_visibility: ${task.min_visibility}
+      key: lane_divider
+
+    ped_crossing_weight: 1.0
+    ped_crossing:
+      _target_: gaussiancar.losses.BinarySegmentationLoss
+
+      min_visibility: ${task.min_visibility}
+      key: ped_crossing
+
+    walkway_weight: 1.0
+    walkway:
+      _target_: gaussiancar.losses.BinarySegmentationLoss
+
+      min_visibility: ${task.min_visibility}
+      key: walkway
+
+    carpark_area_weight: 1.0
+    carpark_area:
+      _target_: gaussiancar.losses.BinarySegmentationLoss
+
+      min_visibility: ${task.min_visibility}
+      key: carpark_area
+
+
+metrics:
+  iou_lane:
+    _target_: gaussiancar.metrics.IoUMetric
+    min_visibility: ${task.min_visibility}
+    key: lane
+
+  iou_road_segment:
+    _target_: gaussiancar.metrics.IoUMetric
+    min_visibility: ${task.min_visibility}
+    key: road_segment
+
+  iou_road_divider:
+    _target_: gaussiancar.metrics.IoUMetric
+    min_visibility: ${task.min_visibility}
+    key: road_divider
+
+  iou_lane_divider:
+    _target_: gaussiancar.metrics.IoUMetric
+    min_visibility: ${task.min_visibility}
+    key: lane_divider
+
+  iou_ped_crossing:
+    _target_: gaussiancar.metrics.IoUMetric
+    min_visibility: ${task.min_visibility}
+    key: ped_crossing
+
+  iou_walkway:
+    _target_: gaussiancar.metrics.IoUMetric
+    min_visibility: ${task.min_visibility}
+    key: walkway
+
+  iou_carpark_area:
+    _target_: gaussiancar.metrics.IoUMetric
+    min_visibility: ${task.min_visibility}
+    key: carpark_area

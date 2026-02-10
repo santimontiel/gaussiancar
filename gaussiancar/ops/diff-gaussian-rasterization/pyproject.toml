@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=77", "wheel", "torch==2.8.0", "numpy<2.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "diff_gaussian_rasterization"
+version = "1.0"
+description = "PyTorch Wrapper for Diff Gaussian Rasterization"
+authors = [
+    { name = "Team Inria, GRAPHDECO" }
+]
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "torch==2.8.0",
+    "torchvision"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["diff_gaussian_rasterization"]

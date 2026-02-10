@@ -1,0 +1,64 @@
+key: vehicle
+min_visibility: 2
+
+data:
+  vehicle: True
+  map_layers: []
+
+module:
+  model:
+    head:
+      _target_: gaussiancar.modeling.components.SegHead
+      dim_last: 256
+      multi_head: True
+      outputs:
+        vehicle: [0, 1, 'identity']
+        vehicle_center: [1, 2, 'identity']
+        vehicle_offset: [2, 4, 'identity']
+
+    aux_head:
+      _target_: gaussiancar.modeling.components.SegHead
+      dim_last: 128
+      multi_head: True
+      outputs:
+        vehicle: [0, 1, 'identity']
+        vehicle_center: [1, 2, 'identity']
+        vehicle_offset: [2, 4, 'identity']
+
+
+losses:
+  _target_: gaussiancar.losses.MultipleLoss
+  modules_or_weights:
+    center_weight: 2.0
+    center:
+      _target_: gaussiancar.losses.CenterLoss
+
+      min_visibility: ${task.min_visibility}
+      key: ${task.key}
+
+    offset_weight:  0.1
+    offset:
+      _target_: gaussiancar.losses.OffsetLoss
+
+      min_visibility: ${task.min_visibility}
+      key: ${task.key}
+
+    bev_weight: 1.0
+    bev:
+      _target_: gaussiancar.losses.BinarySegmentationLoss
+
+      min_visibility: ${task.min_visibility}
+      key: ${task.key}
+
+    dice_weight: 0.3
+    dice:
+      _target_: gaussiancar.losses.BinaryDiceLoss
+      min_visibility: ${task.min_visibility}
+      key: ${task.key}
+
+
+metrics:
+  iou_vehicle:
+    _target_: gaussiancar.metrics.IoUMetric
+    min_visibility: ${task.min_visibility}
+    key: ${task.key}

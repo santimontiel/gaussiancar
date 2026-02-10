@@ -1,0 +1,48 @@
+defaults:
+  - img_params: scale_0_5
+
+_target_: gaussiancar.data.data_module.DataModule
+dataset: 'nuscenes_generated'
+debug_mode: ${debug_mode}
+data_config:
+  version: 'v1.0-trainval'
+  dataset_dir: /data/nuscenes
+  labels_dir: /data/nuscenes/labels
+  cameras: [[0, 1, 2, 3, 4, 5]]
+  bev:
+    h: 200
+    w: 200
+    h_meters: 100.0
+    w_meters: 100.0
+    offset: 0.0
+  image:
+    h: 224
+    w: 480
+    top_crop: 46
+  render:
+    x_min: -50
+    x_max: 50
+    y_min: -50
+    y_max: 50
+    bev_h: 200
+    bev_w: 200
+  radar:
+    num_features: 51
+    max_points: 3500
+  bev_aug_conf: [30.,20.,0.,20.,0.,0.]
+  augment_bev: True
+  augment_img: True
+  split_intrin_extrin: False
+  vehicle: ${task.data.vehicle}
+  map_layers: ${task.data.map_layers}
+
+loader_config:
+  batch_size: ${trainer.batch_size}
+  num_workers: 2
+  pin_memory: True
+  prefetch_factor: 2
+
+model_config:
+  depth_num: 64
+  depth_max: 61.0
+  dataset_name: 'nuscenes'

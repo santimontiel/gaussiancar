@@ -17,9 +17,9 @@
 </p>
 
 <p align="center">
-    📝 <a>Paper (soon...)</a> ·
+    📝 <a href="https://arxiv.org/abs/2602.xxxxx">Paper</a> ·
     💻 <a href="https://www.santimontiel.eu/projects/gaussiancar">Project Page</a> ·
-    🤗 <a>Weights (soon...)</a>
+    🤗 <a href="https://huggingface.co/santimontieleu/gaussiancar">Weights</a>
 </p>
 
 <p align="center">
@@ -44,6 +44,7 @@
 
 ## 📰 News
 
+**[11 Feb. 2026]**: We release code and weights!\
 **[31 Jan. 2026]**: GaussianCaR has been accepted for publication at IEEE ICRA 2026! See you in Vienna, Austria!
 
 ## 🔍 Abstract
@@ -75,7 +76,7 @@ Extract it so that the directory structure looks like this:
     └──── v1.0-mini/
 ```
 
-> [NOTE]
+> [!NOTE]
 > The nuScenes dataset is large (~400GB). Make sure you have enough disk space before downloading.
 
 Then, set the `PATH_TO_NUSCENES` environment variable to point to the dataset root:
@@ -177,7 +178,7 @@ An example of how to change the batch size and number of devices available direc
 uv run tools/train.py task=vehicle trainer.batch_size=8 optimizer.lr=0.0001
 ```
 
-> [WARNING]
+> [!WARNING]
 > At this stage, training is limited to full precision (FP32).
 > Mixed-precision (FP16/BF16) is currently unsupported due to the lack of
 > backward support in the **Points-to-Gaussians** module (PTv3-based).
@@ -197,8 +198,8 @@ You can find the pretrained weights for **GaussianCaR** on our [Hugging Face rep
 
 | Task                  | Dataset  | Pretrained Weights Link             |
 |-----------------------|----------|-------------------------------------|
-| Vehicle Segmentation  | nuScenes | Soon...                             |
-| Map Segmentation      | nuScenes | Soon...                             |
+| Vehicle Segmentation  | nuScenes | [Download](https://huggingface.co/santimontieleu/gaussiancar/blob/main/nuscenes_vehicle.ckpt) |
+| Map Segmentation      | nuScenes | [Download](https://huggingface.co/santimontieleu/gaussiancar/blob/main/nuscenes_map.ckpt)     |
 
 ## 📈 Experimental Results
 
@@ -250,13 +251,13 @@ If you find this work useful for your research, please consider citing us follow
                   Sánchez-García, Fabio and Llamazares, Ángel and
                   Caesar, Holger and Bergasa, Luis M.},
   year          = {2026},
-  eprint        = {xxxx.xxxxx},
+  eprint        = {2602.xxxxx},
   archivePrefix = {arXiv},
-  primaryClass  = {cs.CV}
+  primaryClass  = {cs.RO}
 }
 ```
 
->[NOTE]
+>[!NOTE]
 > We will replace the current arXiv citation with the official ICRA 2026 proceedings once available.
 
 ## 📮 Contact
@@ -266,7 +267,7 @@ If you have any questions or suggestions, feel free to open an issue or contact 
 ## 📄 License
 
 This project is released under the Apache-2.0 License.
-See `LICENSE` for details.
+See [LICENSE](LICENSE) for details.
 
 ## 🫂 Acknowledgements
 

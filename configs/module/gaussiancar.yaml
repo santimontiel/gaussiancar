@@ -1,0 +1,71 @@
+_target_: gaussiancar.modeling.module.GaussianCaRModule
+losses: ${task.losses}
+metrics: ${task.metrics}
+
+model:
+  _target_: gaussiancar.modeling.model.GaussianCaR
+  embed_dims: 128
+  depth_num: ${data.model_config.depth_num}
+  depth_min: 1
+  depth_max: ${data.model_config.depth_max}
+  error_tolerance: 0.5
+  opacity_filter: 0.01
+  x_min: ${data.data_config.render.x_min}
+  x_max: ${data.data_config.render.x_max}
+  y_min: ${data.data_config.render.y_min}
+  y_max: ${data.data_config.render.y_max}
+  bev_h: ${data.data_config.render.bev_h}
+  bev_w: ${data.data_config.render.bev_w}
+
+  image_encoder:
+    _target_: gaussiancar.modeling.components.image_encoder.PixelsToGaussians
+    model_name: "efficientvit_l2.r384_in1k"
+    in_channels: 3
+    out_indices: [1, 2, 3]
+    out_channels: ${module.model.embed_dims}
+    pretrained: true
+
+    neck:
+      _target_: gaussiancar.modeling.components.image_encoder.AGPNeck
+
+      align_res_layer:
+        _target_: gaussiancar.modeling.components.image_encoder.AlignRes
+        mode: "upsample"
+        scale_factors: [1, 2, 4]
+
+      prepare_c_layer:
+        _target_: gaussiancar.modeling.components.image_encoder.PrepareChannel
+        in_channels: [128, 256, 512]
+        depth_num: ${module.model.depth_num} 
+        interm_c: 256
+        out_c: ${module.model.image_encoder.out_channels}
+
+  radar_encoder:
+    _target_: gaussiancar.modeling.components.radar_encoder.PointsToGaussians
+    in_channels: ${data.data_config.radar.num_features}
+    max_points: ${data.data_config.radar.max_points}
+    hidden_channels: 256
+    out_channels: ${module.model.embed_dims}
+
+  fuser:
+    _target_: gaussiancar.modeling.components.CMXFuser
+    embed_dims: ${module.model.embed_dims}
+
+  decoder:
+    _target_: gaussiancar.modeling.components.DPTHead
+    backbone_type: "convnext"
+    in_channels: 
+      - ${module.model.embed_dims}
+      - ${module.model.embed_dims}
+      - ${module.model.embed_dims}
+      - ${module.model.embed_dims}
+    post_process_channels:
+      - ${module.model.embed_dims}
+      - ${module.model.embed_dims}
+      - ${module.model.embed_dims}
+      - ${module.model.embed_dims}
+    channels: ${mult:2, ${module.model.embed_dims}}
+
+  head: ${task.module.model.head}
+  aux_head: ${task.module.model.aux_head}
+

@@ -1,0 +1,186 @@
+from typing import Iterable, Optional
+
+import timm
+import torch
+import torch.nn as nn
+from torchvision.models.resnet import Bottleneck
+
+BottleneckBlock = lambda x: Bottleneck(x, x // 4)
+
+
+class AlignRes(nn.Module):
+    """Align resolutions of the outputs of the backbone."""
+
+    def __init__(
+        self,
+        mode="upsample",
+        scale_factors: Iterable[int] = [1, 2],
+        in_channels: Iterable[int] = [256, 512, 1024, 2048],
+    ):
+        super().__init__()
+        self.layers = nn.ModuleList()
+        if mode == "upsample":
+            for s in scale_factors:
+                if s != 1:
+                    self.layers.append(
+                        nn.Upsample(
+                            scale_factor=s, mode="bilinear", align_corners=False
+                        )
+                    )
+                else:
+                    self.layers.append(nn.Identity())
+
+        elif mode == "conv2dtranspose":
+            for i, in_c in enumerate(in_channels):
+                if scale_factors[i] != 1:
+                    self.layers.append(
+                        nn.ConvTranspose2d(
+                            in_c, in_c, kernel_size=2, stride=2, padding=0
+                        )
+                    )
+                else:
+                    self.layers.append(nn.Identity())
+
+        else:
+            raise NotImplementedError
+        return
+
+    def forward(self, x):
+        return [self.layers[i](xi) for i, xi in enumerate(x)]
+
+
+class PrepareChannel(nn.Module):
+    """Transform the feature map to align with Network."""
+
+    def __init__(
+        self,
+        in_channels=[256, 512, 1024, 2048],
+        interm_c=128,
+        out_c: Optional[int] = 128,
+        depth_num=0,
+    ):
+        super().__init__()
+        assert depth_num != 0
+
+        in_c = sum(in_channels)
+        self.feats = nn.Sequential(
+            nn.Conv2d(in_c, interm_c, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(interm_c),
+            nn.ReLU(inplace=True),
+            BottleneckBlock(interm_c),
+            BottleneckBlock(interm_c),
+            BottleneckBlock(interm_c),
+            nn.Conv2d(interm_c, out_c, kernel_size=1, padding=0),
+        )
+        self.depth = nn.Sequential(
+            nn.Conv2d(in_c, interm_c, kernel_size=3, padding=1),
+            nn.BatchNorm2d(interm_c),
+            nn.ReLU(inplace=True),
+            BottleneckBlock(interm_c),
+            BottleneckBlock(interm_c),
+            BottleneckBlock(interm_c),
+            nn.Conv2d(interm_c, depth_num, kernel_size=1, padding=0)
+        )
+        self.opacity = nn.Sequential(
+            nn.Conv2d(in_c, interm_c, kernel_size=3, padding=1),
+            nn.BatchNorm2d(interm_c),
+            nn.ReLU(inplace=True),
+            BottleneckBlock(interm_c),
+            BottleneckBlock(interm_c),
+            BottleneckBlock(interm_c),
+            nn.Conv2d(interm_c, 1, kernel_size=1, padding=0)
+        )
+        self.offsets = nn.Sequential(
+            nn.Conv2d(in_c, interm_c, kernel_size=3, padding=1),
+            nn.BatchNorm2d(interm_c),
+            nn.ReLU(inplace=True),
+            BottleneckBlock(interm_c),
+            BottleneckBlock(interm_c),
+            BottleneckBlock(interm_c),
+            nn.Conv2d(interm_c, 3, kernel_size=1, padding=0)
+        )
+        
+    def forward(self, x):
+        return self.feats(x), self.depth(x), self.opacity(x).sigmoid(), self.offsets(x)
+
+class AGPNeck(nn.Module):
+    """
+    Upsample outputs of the backbones, group them and align them to be compatible with Network.
+
+    Note: mimics UpsamplingConcat in SimpleBEV.
+    """
+
+    def __init__(
+        self,
+        align_res_layer,
+        prepare_c_layer,
+        group_method=lambda x: torch.cat(x, dim=1),
+        list_output=False,
+    ):
+        """
+        Args:
+            - align_res_layer: upsample layers at different resolution to the same.
+            - group_method: how to gather the upsampled layers.
+            - prepare_c_layer: change the channels of the upsampled layers in order to align with the network.
+        """
+        super().__init__()
+
+        self.align_res_layer = align_res_layer
+        self.group_method = group_method
+        self.prepare_c_layer = prepare_c_layer
+        self.list_output = list_output
+
+    def forward(self, x: Iterable[torch.Tensor]):
+        if x[0].ndim == 5:
+            x = [y.flatten(0,1) for y in x]
+        
+        # Align resolution of inputs.
+        x = self.align_res_layer(x)
+
+        # Group inputs.
+        x = self.group_method(x)
+
+        # Change channels of final input.
+        x, depth, opacity, offsets = self.prepare_c_layer(x)
+        if self.list_output:
+            x = [x]
+        return x, depth, opacity, offsets
+    
+
+class PixelsToGaussians(nn.Module):
+    def __init__(
+        self,
+        model_name: str = "efficientvit_l2.r384_in1k",
+        out_indices: tuple = (0, 1, 2, 3),
+        pretrained: bool = True,
+        in_channels: int = 3,
+        out_channels: int = 128,
+        neck: Optional[nn.Module] = None,
+    ) -> None:
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.model_name = model_name
+        self.out_indices = out_indices
+        self.pretrained = pretrained
+
+        self.backbone = timm.create_model(
+            model_name,
+            pretrained=pretrained,
+            features_only=True,
+            out_indices=out_indices,
+            in_chans=in_channels
+        )
+        self.neck = neck
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.backbone(x)
+        if self.neck is not None:
+            x = self.neck(x)
+            
+        return {
+            "features": x[0],
+            "depth": x[1],
+            "opacity": x[2],
+            "offsets": x[3]
+        }

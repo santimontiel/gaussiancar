@@ -1,0 +1,59 @@
+defaults:
+  - _self_
+  - data: nuscenes.yaml
+  - module: gaussiancar.yaml
+  - task: vehicle.yaml
+
+task_name: "train"
+debug_mode: True
+seed: 42
+
+trainer:
+  accelerator: "cuda"
+  devices: 1
+  strategy: "ddp_find_unused_parameters_true"
+  max_epochs: 40
+  precision: "32-true"
+  batch_size: 1
+  effective_batch_size: 16
+  gradient_clip_val: 5.0
+  limit_train_batches: 1.0
+  limit_val_batches: 1.0
+  num_sanity_val_steps: 0
+
+loggers:
+  - _target_: lightning.pytorch.loggers.wandb.WandbLogger
+    project: "gaussiancar_${data.model_config.dataset_name}_${task.key}"
+    name: "${now:%Y-%m-%d_%H-%M-%S}_custom_experiment"
+    save_dir: "${hydra:runtime.cwd}/logs/"
+    tags:
+      - "${data.img_params.name}"
+      - "visibility_${task.min_visibility}"
+
+callbacks:
+  - _target_: lightning.pytorch.callbacks.ModelCheckpoint
+    monitor: "val/metrics/mIoU"
+    filename: "best"
+    save_top_k: 1
+    mode: "max"
+    save_last: True
+
+  - _target_: lightning.pytorch.callbacks.LearningRateMonitor
+    logging_interval: "epoch"
+    
+  - _target_: lightning.pytorch.callbacks.RichModelSummary
+    max_depth: 2
+
+optimizer:
+  name: "AdamW"
+  lr: 3e-4
+  weight_decay: 1e-7
+
+scheduler:
+  name: "OneCycleLR"
+  max_lr: ${optimizer.lr}
+  pct_start: 0.05
+  div_factor: 3.0
+  final_div_factor: 20
+  cycle_momentum: False
+  anneal_strategy: "linear"
