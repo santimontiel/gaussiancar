@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-    📝 <a href="https://arxiv.org/abs/2602.xxxxx">Paper</a> ·
+    📝 <a href="https://arxiv.org/abs/2602.08784">Paper</a> ·
     💻 <a href="https://www.santimontiel.eu/projects/gaussiancar">Project Page</a> ·
     🤗 <a href="https://huggingface.co/santimontieleu/gaussiancar">Weights</a>
 </p>
@@ -251,7 +251,7 @@ If you find this work useful for your research, please consider citing us follow
                   Sánchez-García, Fabio and Llamazares, Ángel and
                   Caesar, Holger and Bergasa, Luis M.},
   year          = {2026},
-  eprint        = {2602.xxxxx},
+  eprint        = {2602.08784},
   archivePrefix = {arXiv},
   primaryClass  = {cs.RO}
 }
