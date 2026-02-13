@@ -124,8 +124,8 @@ see a prompt like this:
 🔍 Checking GPU and CUDA availability...
 ✅ PyTorch is working properly with the GPU.
 📍 GPU Information:
-   - CUDA version:     12.6
-   - Device name:      NVIDIA GeForce RTX 4090
+   - CUDA version:     12.9
+   - Device name:      NVIDIA GeForce RTX 5090
    - Number of GPUs:   1
 
 ------------------------------------------------------------------------------------

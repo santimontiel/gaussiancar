@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.6.3-devel-ubuntu22.04 AS base
+FROM nvidia/cuda:12.9.1-devel-ubuntu22.04 AS base
 ENV FORCE_CUDA="1"
 
 # Obtain the UID and GID of the current user to create a user with the same ID, this is to avoid permission issues when mounting local volumes.
