@@ -1,6 +1,6 @@
 USER_NAME := $(shell whoami)
 IMAGE_NAME := gaussiancar
-TAG_NAME := v1.0.0
+TAG_NAME := v1
 CONTAINER_NAME := $(IMAGE_NAME)_container
 GPU_ID := 0
 
@@ -27,22 +27,33 @@ define run_docker
 		/bin/bash -c $(1)
 endef
 
+check-env:
+ifndef PATH_TO_NUSCENES
+	$(error PATH_TO_NUSCENES is undefined. Please run 'export PATH_TO_NUSCENES=/your/path' first)
+endif
+	@if [ ! -d "$(PATH_TO_NUSCENES)" ]; then \
+		echo "Error: PATH_TO_NUSCENES directory does not exist at $(PATH_TO_NUSCENES)"; \
+		exit 1; \
+	fi
+
 .PHONY: build run attach clear
 build:
-	docker build . -t $(IMAGE_NAME):$(TAG_NAME) --build-arg USER=$(USER_NAME) --build-arg UID=$(UID) --build-arg GID=$(GID)
+	docker build deploy/docker -t $(IMAGE_NAME):$(TAG_NAME) --build-arg USER=$(USER_NAME) --build-arg UID=$(UID) --build-arg GID=$(GID)
 	@echo "\nBuild complete!"
 	@echo "Run 'make run' to start the container."
 
-run:
-	$(call run_docker, "source entrypoint.sh && bash")
+run: check-env
+	$(call run_docker, "source deploy/docker/entrypoint.sh && bash")
 
 attach:
 	docker exec -it $(CONTAINER_NAME) /bin/bash -c bash
 
 clear:
+	@rm -rf .cache/
 	@rm -rf .venv/
 	@rm -rf gaussiancar.egg-info/
 	@find . -type d -name "__pycache__" -exec rm -rf {} +
 	@rm -rf gaussiancar/ops/diff-gaussian-rasterization/build/
 	@rm -rf gaussiancar/ops/diff-gaussian-rasterization.egg-info/
+	@if [ -f "uv.lock" ]; then rm uv.lock; fi
 	@echo "Cleaned up the project directory."
