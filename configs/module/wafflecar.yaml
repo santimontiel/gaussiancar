@@ -41,8 +41,12 @@ model:
         out_c: ${module.model.image_encoder.out_channels}
 
   radar_encoder:
-    _target_: gaussiancar.modeling.components.radar_encoders.ptv3.PointsToGaussians
-    in_channels: ${data.data_config.radar.num_features}
+    _target_: gaussiancar.modeling.components.radar_encoders.waffleiron.WafflesToGaussians
+    in_channels: ${add:${data.data_config.radar.num_features}, 3}
+    waffle_channels: 384
+    num_layers: 12
+    num_neighbors: 16
+    voxel_size: 0.5
     max_points: ${data.data_config.radar.max_points}
     hidden_channels: 256
     out_channels: ${module.model.embed_dims}

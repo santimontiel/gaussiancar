@@ -224,18 +224,21 @@ class GaussianCaR(nn.Module):
         radar_gaussians = self.forward_features_radar(batch)
 
         # Rasterize Gaussians to BEV features.
+        dtype = camera_gaussians["features"].dtype
         camera_bev, num_gaussians_cam = self.gs_render_image(
-            camera_gaussians["features"],
-            camera_gaussians["centers"],
-            camera_gaussians["covariances"],
-            camera_gaussians["opacities"]
+            camera_gaussians["features"].float(),
+            camera_gaussians["centers"].float(),
+            camera_gaussians["covariances"].float(),
+            camera_gaussians["opacities"].float(),
         )
         radar_bev, num_gaussians_radar = self.gs_render_radar(
-            radar_gaussians["features"],
-            radar_gaussians["centers"],
-            radar_gaussians["covariances"],
-            radar_gaussians["opacities"]
+            radar_gaussians["features"].float(),
+            radar_gaussians["centers"].float(),
+            radar_gaussians["covariances"].float(),
+            radar_gaussians["opacities"].float()
         )
+        camera_bev = camera_bev.to(dtype)
+        radar_bev = radar_bev.to(dtype)
         
         # Fuse BEV features.
         fused_bev = self.fuser(camera_bev, radar_bev)

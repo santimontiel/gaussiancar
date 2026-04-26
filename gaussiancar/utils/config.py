@@ -8,6 +8,7 @@ from omegaconf import OmegaConf
 def register_new_resolvers():
 
     CUSTOM_RESOLVERS = {
+        "add": lambda x, y: x + y,
         "mult": lambda x, y: x * y,
         "last_token": lambda x: x.split(".")[-1],
     }

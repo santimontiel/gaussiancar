@@ -1,11 +1,11 @@
 defaults:
   - _self_
   - data: nuscenes.yaml
-  - module: gaussiancar.yaml
+  - module: wafflecar.yaml
   - task: vehicle.yaml
 
 task_name: "train"
-debug_mode: True
+debug_mode: False
 seed: 42
 
 trainer:
@@ -13,8 +13,8 @@ trainer:
   devices: 1
   strategy: "ddp_find_unused_parameters_true"
   max_epochs: 40
-  precision: "32-true"
-  batch_size: 1
+  precision: "bf16-mixed"
+  batch_size: 2
   effective_batch_size: 16
   gradient_clip_val: 5.0
   limit_train_batches: 1.0
@@ -23,7 +23,7 @@ trainer:
 
 loggers:
   - _target_: lightning.pytorch.loggers.wandb.WandbLogger
-    project: "gaussiancar_${data.model_config.dataset_name}_${task.key}"
+    project: "wafflecar_${data.model_config.dataset_name}_${task.key}"
     name: "${now:%Y-%m-%d_%H-%M-%S}_custom_experiment"
     save_dir: "${hydra:runtime.cwd}/logs/"
     tags:
