@@ -63,5 +63,9 @@ RUN echo "source ~/.bashrc" >> ~/.bash_profile
 # Set HF_HOME to a directory inside the workspace to avoid re-downloading models every time.
 RUN echo "export HF_HOME="/workspace/.cache/hugging-face"" >> /home/$USER/.bashrc
 
+# Install Claude Code.
+RUN curl -fsSL https://claude.ai/install.sh | bash
+ENV PATH="/home/$USER/.local/bin:$PATH"
+
 WORKDIR /workspace
 CMD [ "/bin/bash" ]
