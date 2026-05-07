@@ -508,15 +508,8 @@ class WafflesToGaussians(nn.Module):
 
     def forward(self, radar_points: list[torch.Tensor]):
 
-        # Prepare inputs for WaffleIron.
-        # From radar_points to (feats, cell_ind, occupied_cell, neighbors).
-        radar_dict = {
-            "xyz": [],
-            "feats": [],
-            "cell_ind": [],
-            "occupied_cell": [],
-            "neighbors": [],
-        }
+        # Pass 1: per-sample preprocessing (voxelize, crop, cell_ind).
+        preprocessed = []
         for r in radar_points:
             vox_points = voxelize(r, dims=self.dims, voxel_size=self.voxel_size)
             crop_points = crop(vox_points, dims=self.dims, fov=self.fov_xyz)
@@ -527,14 +520,47 @@ class WafflesToGaussians(nn.Module):
                 lut_axis_plane=self.lut_axis_plane,
                 fov_xyz=torch.tensor(self.fov_xyz, device=crop_points.device),
             ).T
-            edge_index = knn(crop_points[:, :3], crop_points[:, :3], k=self.num_neighbors + 1)
-            neighbors_emb = edge_index[0].view(crop_points.shape[0], self.num_neighbors + 1)
+            preprocessed.append((crop_points, cell_ind))
+
+        # Batched KNN: one call across all samples in the batch.
+        device = preprocessed[0][0].device
+        sizes = [p[0].shape[0] for p in preprocessed]
+        all_pts = torch.cat([p[0][:, :3] for p in preprocessed], dim=0)
+        batch_vec = torch.cat([
+            torch.full((n,), i, dtype=torch.long, device=device)
+            for i, n in enumerate(sizes)
+        ])
+        actual_k = min(self.num_neighbors + 1, min(sizes))
+        edge_index = knn(all_pts, all_pts, k=actual_k, batch_x=batch_vec, batch_y=batch_vec)
+
+        # Pass 2: unpack knn results and populate radar_dict.
+        # torch_cluster.knn output is sorted by query index, so sample i occupies
+        # the slice [cumulative[i]*actual_k : cumulative[i+1]*actual_k] in edge_index.
+        cumulative = [0] + torch.cumsum(torch.tensor(sizes, device=device), dim=0).tolist()
+        radar_dict = {
+            "xyz": [],
+            "feats": [],
+            "cell_ind": [],
+            "occupied_cell": [],
+            "neighbors": [],
+        }
+        for i, (crop_points, cell_ind) in enumerate(preprocessed):
+            N = sizes[i]
+            start, end = cumulative[i], cumulative[i + 1]
+            neighbors_emb = (
+                edge_index[0][start * actual_k : end * actual_k] - start
+            ).view(N, actual_k)
+            if actual_k < self.num_neighbors + 1:
+                # Pad missing neighbors with self-indices so relative diff = 0 in embedding
+                self_idx = torch.arange(N, device=device).unsqueeze(1)
+                pad = self_idx.expand(-1, self.num_neighbors + 1 - actual_k)
+                neighbors_emb = torch.cat([neighbors_emb, pad], dim=1)
 
             radar_dict["xyz"].append(crop_points[:, :3])  # Shape (N, 3)
             radar_dict["feats"].append(crop_points)  # Shape (N, C)
             radar_dict["cell_ind"].append(cell_ind)
             radar_dict["occupied_cell"].append(
-                torch.ones(crop_points.shape[0], device=crop_points.device, dtype=torch.long)
+                torch.ones(N, device=device, dtype=torch.long)
             )
             radar_dict["neighbors"].append(neighbors_emb)
 
