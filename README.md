@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-    📝 <a href="https://arxiv.org/abs/2602.08784">Paper</a> ·
+    📝 <a href="https://arxiv.org/abs/2602.08784v2">Paper</a> ·
     💻 <a href="https://www.santimontiel.eu/projects/gaussiancar">Project Page</a> ·
     🤗 <a href="https://huggingface.co/santimontieleu/gaussiancar">Weights</a>
 </p>
@@ -44,6 +44,7 @@
 
 ## 📰 News
 
+**[7 Oct. 2026]**: The [ICRA 2026 proceedings](https://ieeexplore.ieee.org/document/11697071) version is out (see [Citation](#️-citation)), and our [arXiv paper](https://arxiv.org/abs/2602.08784v2) has been updated to v2!\
 **[11 Feb. 2026]**: We release code and weights!\
 **[31 Jan. 2026]**: GaussianCaR has been accepted for publication at IEEE ICRA 2026! See you in Vienna, Austria!
 
@@ -245,20 +246,17 @@ You can find the pretrained weights for **GaussianCaR** on our [Hugging Face rep
 If you find this work useful for your research, please consider citing us following the BibTeX entry:
 
 ```bibtex
-@article{montielmarin2026gaussiancar,
-  title         = {GaussianCaR: Gaussian Splatting for Efficient Camera-Radar Fusion},
-  author        = {Montiel-Marín, Santiago and Antunes-García, Miguel and
-                  Sánchez-García, Fabio and Llamazares, Ángel and
-                  Caesar, Holger and Bergasa, Luis M.},
-  year          = {2026},
-  eprint        = {2602.08784},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.RO}
+@inproceedings{montielmarin2026gaussiancar,
+  title     = {GaussianCaR: Gaussian Splatting for Efficient Camera-Radar Fusion},
+  author    = {Montiel-Marín, Santiago and Antunes-García, Miguel and
+              Sánchez-García, Fabio and Llamazares, Ángel and
+              Caesar, Holger and Bergasa, Luis M.},
+  booktitle = {IEEE International Conference on Robotics and Automation (ICRA)},
+  pages     = {13035--13042},
+  year      = {2026},
+  doi       = {10.1109/ICRA57385.2026.11697071}
 }
 ```
-
->[!NOTE]
-> We will replace the current arXiv citation with the official ICRA 2026 proceedings once available.
 
 ## 📮 Contact
 
